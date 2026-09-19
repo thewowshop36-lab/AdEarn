@@ -1,0 +1,6 @@
+{
+  "name": "AdEarn",
+  "description": "Watch rewarded ads to earn money with VIP multipliers, daily ad limits, and USDT TRC20 deposits and withdrawals.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
