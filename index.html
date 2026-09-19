@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AdEarn - Earn While Viewing</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        emeraldPrimary: '#10B981',
+                        emeraldLight: '#34D399',
+                        goldAccent: '#F59E0B',
+                        goldLight: '#FBBF24',
+                        darkSurface: '#1E293B',
+                        darkBg: '#0F172A',
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-darkBg text-slate-100 font-sans min-h-screen pb-20">
+
+    <!-- Top Header -->
+    <header class="bg-darkSurface border-b border-slate-700/50 sticky top-0 z-40 px-4 py-3 flex justify-between items-center shadow-md">
+        <div class="flex items-center space-x-2">
+            <div class="bg-goldAccent text-black font-bold px-2 py-1 rounded text-xs">ADEARN</div>
+            <span class="font-bold text-lg tracking-wide">Earn While Viewing</span>
+        </div>
+        <div class="flex items-center space-x-3">
+            <div class="bg-slate-800 border border-slate-700 px-3 py-1 rounded-full flex items-center space-x-1.5">
+                <i class="fa-solid fa-wallet text-goldAccent text-xs"></i>
+                <span id="headerBalance" class="font-bold text-emeraldLight text-sm">0.00 USDT</span>
+            </div>
+            <button onclick="toggleNotifications()" class="relative p-2 bg-slate-800 rounded-full hover:bg-slate-700">
+                <i class="fa-solid fa-bell text-slate-300"></i>
+                <span id="notifBadge" class="absolute top-0 right-0 bg-red-500 text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center hidden">0</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="max-w-md mx-auto p-4 space-y-5">
+
+        <!-- User Profile Card -->
+        <div class="bg-gradient-to-r from-slate-800 to-darkSurface border border-slate-700/60 rounded-2xl p-5 shadow-lg relative overflow-hidden">
+            <div class="flex justify-between items-start">
+                <div>
+                    <span class="text-xs text-slate-400 uppercase tracking-wider">Current VIP Tier</span>
+                    <h2 id="tierTitle" class="text-xl font-extrabold text-goldLight">Free Tier</h2>
+                </div>
+                <span id="tierBadge" class="bg-goldAccent/20 border border-goldAccent/40 text-goldLight text-xs px-2.5 py-1 rounded-full font-semibold">1.0x Multiplier</span>
+            </div>
+            
+            <div class="mt-4 grid grid-cols-2 gap-3 pt-3 border-t border-slate-700/50">
+                <div>
+                    <span class="text-[11px] text-slate-400">Today Ads Watched</span>
+                    <p id="todayAdsCount" class="font-bold text-sm">0 / 5</p>
+                </div>
+                <div>
+                    <span class="text-[11px] text-slate-400">Today Earnings</span>
+                    <p id="todayEarningsCount" class="font-bold text-sm text-emeraldLight">$0.00 USDT</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab Navigation -->
+        <div class="flex bg-slate-800/80 p-1 rounded-xl border border-slate-700 text-sm">
+            <button onclick="switchTab('ads')" id="tabAdsBtn" class="flex-1 py-2 rounded-lg font-bold bg-emeraldPrimary text-black transition">Watch Ads</button>
+            <button onclick="switchTab('vip')" id="tabVipBtn" class="flex-1 py-2 rounded-lg font-semibold text-slate-300 transition">VIP Packages</button>
+            <button onclick="switchTab('wallet')" id="tabWalletBtn" class="flex-1 py-2 rounded-lg font-semibold text-slate-300 transition">Wallet</button>
+        </div>
+
+        <!-- TAB 1: WATCH ADS -->
+        <div id="tabAds" class="space-y-4">
+            <h3 class="font-bold text-slate-200 flex items-center"><i class="fa-solid fa-play text-emeraldPrimary mr-2"></i> Available Rewarded Ads</h3>
+            <div id="adsList" class="space-y-3">
+                <!-- Dynamic Ads injected via JS -->
+            </div>
+        </div>
+
+        <!-- TAB 2: VIP PACKAGES -->
+        <div id="tabVip" class="space-y-4 hidden">
+            <h3 class="font-bold text-slate-200 flex items-center"><i class="fa-solid fa-crown text-goldAccent mr-2"></i> Upgrade VIP Tier</h3>
+            <div id="vipList" class="space-y-3">
+                <!-- Dynamic VIP Tiers -->
+            </div>
+        </div>
+
+        <!-- TAB 3: WALLET & WITHDRAW -->
+        <div id="tabWallet" class="space-y-4 hidden">
+            <div class="bg-darkSurface border border-slate-700 rounded-2xl p-4 space-y-3">
+                <h3 class="font-bold text-slate-200"><i class="fa-solid fa-money-bill-transfer text-emeraldPrimary mr-2"></i> Request Withdrawal</h3>
+                <p class="text-xs text-slate-400">Minimum withdrawal threshold is <span class="text-goldLight font-bold">50.00 USDT</span>.</p>
+                <div>
+                    <label class="text-xs text-slate-400 block mb-1">TRC20 Address (Starts with 'T', 34 chars)</label>
+                    <input type="text" id="withdrawAddress" placeholder="T..." class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-sm text-slate-200 focus:outline-none focus:border-emeraldPrimary">
+                </div>
+                <div>
+                    <label class="text-xs text-slate-400 block mb-1">Amount (USDT)</label>
+                    <input type="number" id="withdrawAmount" placeholder="50.00" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-sm text-slate-200 focus:outline-none focus:border-emeraldPrimary">
+                </div>
+                <button onclick="submitWithdrawal()" class="w-full bg-emeraldPrimary text-black font-bold py-2.5 rounded-lg hover:bg-emeraldLight transition">Submit Payout Request</button>
+            </div>
+
+            <!-- Deposit Card -->
+            <div class="bg-darkSurface border border-slate-700 rounded-2xl p-4 space-y-3">
+                <h3 class="font-bold text-slate-200"><i class="fa-solid fa-wallet text-goldAccent mr-2"></i> Deposit USDT (TRC20)</h3>
+                <p class="text-xs text-slate-400">Official Admin Address: <br><span class="text-[10px] text-slate-300 font-mono select-all bg-slate-900 p-1 block mt-1 rounded">TV7QzoSkw9Patn8tFakrrg6BnNSCBBrNSJ</span></p>
+                <div>
+                    <label class="text-xs text-slate-400 block mb-1">Transaction Hash (TxID)</label>
+                    <input type="text" id="depositTxHash" placeholder="Enter TxID..." class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-sm text-slate-200 focus:outline-none focus:border-emeraldPrimary">
+                </div>
+                <div>
+                    <label class="text-xs text-slate-400 block mb-1">Amount (USDT)</label>
+                    <input type="number" id="depositAmount" placeholder="10.00" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-sm text-slate-200 focus:outline-none focus:border-emeraldPrimary">
+                </div>
+                <button onclick="submitDeposit()" class="w-full bg-goldAccent text-black font-bold py-2.5 rounded-lg hover:bg-goldLight transition">Verify & Credit Deposit</button>
+            </div>
+
+            <!-- Transaction History -->
+            <div class="bg-darkSurface border border-slate-700 rounded-2xl p-4 space-y-3">
+                <h3 class="font-bold text-slate-200"><i class="fa-solid fa-history text-slate-400 mr-2"></i> Transaction History</h3>
+                <div id="txList" class="space-y-2 max-h-48 overflow-y-auto text-xs">
+                    <p class="text-slate-500 text-center py-2">No transactions yet.</p>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- AD PLAYER MODAL -->
+    <div id="adModal" class="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-darkSurface border border-slate-700 w-full max-w-sm rounded-2xl p-5 space-y-4 relative">
+            <div class="flex justify-between items-center">
+                <span class="bg-goldAccent text-black text-[10px] font-bold px-2 py-0.5 rounded">AD SPONSORED</span>
+                <span id="adTimerBadge" class="bg-black/60 border border-goldAccent/50 text-goldAccent text-xs px-2.5 py-1 rounded-full font-bold">15s</span>
+            </div>
+            
+            <!-- Progress Bar -->
+            <div class="w-full bg-slate-700 h-1.5 rounded-full overflow-hidden">
+                <div id="adProgressBar" class="bg-goldAccent h-full w-0 transition-all duration-300"></div>
+            </div>
+
+            <!-- Ad Creative Box -->
+            <div id="adBoxContainer" class="h-36 rounded-xl flex flex-col items-center justify-center p-4 text-center border border-slate-700 relative">
+                <i id="adPlayIcon" class="fa-solid fa-play text-3xl mb-2 text-white"></i>
+                <h4 id="adModalTitle" class="font-bold text-sm">Ad Title</h4>
+                <p id="adModalDesc" class="text-[11px] text-slate-300 mt-1">Watching ad content...</p>
+            </div>
+
+            <div class="bg-slate-800/80 p-2.5 rounded-xl flex justify-between items-center text-xs">
+                <span class="text-slate-400">Estimated Reward:</span>
+                <span id="adRewardPreview" class="font-bold text-emeraldLight">+0.15 USDT</span>
+            </div>
+
+            <button id="claimRewardBtn" onclick="claimAdReward()" disabled class="w-full bg-slate-700 text-slate-400 font-bold py-2.5 rounded-xl cursor-not-allowed transition">
+                Please wait... (<span id="countdownSec">15</span>s)
+            </button>
+        </div>
+    </div>
+
+    <!-- NOTIFICATIONS MODAL -->
+    <div id="notifModal" class="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-darkSurface border border-slate-700 w-full max-w-sm rounded-2xl p-5 space-y-4 relative max-h-[80vh] flex flex-col">
+            <div class="flex justify-between items-center border-b border-slate-700 pb-2">
+                <h3 class="font-bold text-sm"><i class="fa-solid fa-bell text-goldAccent mr-2"></i> Notifications</h3>
+                <button onclick="toggleNotifications()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <div id="notificationsContainer" class="space-y-2 overflow-y-auto flex-1 text-xs">
+                <p class="text-slate-500 text-center py-4">No notifications.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Alert -->
+    <div id="toast" class="fixed bottom-5 left-1/2 -translate-x-1/2 bg-slate-800 border border-slate-600 text-white text-xs px-4 py-2.5 rounded-xl shadow-xl transition-all duration-300 opacity-0 pointer-events-none z-50 flex items-center space-x-2">
+        <i id="toastIcon" class="fa-solid fa-circle-info text-emeraldPrimary"></i>
+        <span id="toastMsg">Notification message</span>
+    </div>
+
+    <!-- JavaScript Application Logic -->
+    <script>
+        // State Management
+        let state = {
+            balance: 0.0,
+            vipTier: 'FREE',
+            todayAdsWatched: 0,
+            todayEarnings: 0.0,
+            totalEarnings: 0.0,
+            totalWithdrawn: 0.0,
+            savedTrc20Address: '',
+            transactions: [],
+            notifications: []
+        };
+
+        const tiers = {
+            FREE: { title: 'Free Tier', dailyLimit: 5, multiplier: 1.0, cost: 0, color: 'text-slate-300' },
+            BRONZE: { title: 'Bronze VIP', dailyLimit: 10, multiplier: 1.3, cost: 10, color: 'text-amber-600' },
+            SILVER: { title: 'Silver VIP', dailyLimit: 18, multiplier: 1.6, cost: 25, color: 'text-slate-400' },
+            GOLD: { title: 'Gold VIP', dailyLimit: 28, multiplier: 2.0, cost: 50, color: 'text-goldAccent' },
+            DIAMOND: { title: 'Diamond VIP', dailyLimit: 40, multiplier: 2.4, cost: 100, color: 'text-cyan-400' }
+        };
+
+        const availableAds = [
+            { id: 1, title: 'Crypto Exchange Promo', sponsor: 'OKX Official', domain: 'okx.com', duration: 10, color: '#3B82F6', desc: 'Explore high-speed crypto spot and derivatives trading.' },
+            { id: 2, title: 'Web3 Gaming Showcase', sponsor: 'Supabase Gaming', domain: 'supabase.com', duration: 15, color: '#10B981', desc: 'Build scalable realtime web applications instantly.' },
+            { id: 3, title: 'Global Forex Markets', sponsor: 'Exness Trader', domain: 'exness.com', duration: 20, color: '#F59E0B', desc: 'Trade gold and currency pairs with ultra-low spreads.' },
+            { id: 4, title: 'Automated Bot Setup', sponsor: 'ManyChat Hub', domain: 'manychat.com', duration: 30, color: '#8B5CF6', desc: 'Scale your marketing automation effortlessly.' }
+        ];
+
+        let currentActiveAd = null;
+        let adTimerInterval = null;
+        let secondsRemaining = 0;
+
+        // Initialize App
+        function initApp() {
+            const saved = localStorage.getItem('adearn_state');
+            if (saved) {
+                state = JSON.parse(saved);
+            } else {
+                addNotification('Welcome to AdEarn!', 'Earn up to $0.49 per rewarded ad. Upgrade VIP to boost limits!', 'SYSTEM');
+            }
+            renderUI();
+        }
+
+        function saveState() {
+            localStorage.setItem('adearn_state', JSON.stringify(state));
+            renderUI();
+        }
+
+        function renderUI() {
+            document.getElementById('headerBalance').innerText = `${state.balance.toFixed(2)} USDT`;
+            const tierInfo = tiers[state.vipTier];
+            document.getElementById('tierTitle').innerText = tierInfo.title;
+            document.getElementById('tierBadge').innerText = `${tierInfo.multiplier}x Multiplier`;
+            document.getElementById('todayAdsCount').innerText = `${state.todayAdsWatched} / ${tierInfo.dailyLimit}`;
+            document.getElementById('todayEarningsCount').innerText = `$${state.todayEarnings.toFixed(2)} USDT`;
+            
+            // Unread notifications count
+            const unreadCount = state.notifications.filter(n => !n.read).length;
+            const badge = document.getElementById('notifBadge');
+            if (unreadCount > 0) {
+                badge.innerText = unreadCount;
+                badge.classList.remove('hidden');
+            } else {
+                badge.classList.add('hidden');
+            }
+
+            renderAdsList();
+            renderVipList();
+            renderTransactions();
+            renderNotificationsList();
+        }
+
+        // Render Ads
+        function renderAdsList() {
+            const container = document.getElementById('adsList');
+            container.innerHTML = '';
+            availableAds.forEach(ad => {
+                const reward = Math.min(0.49, Math.round((ad.duration * 0.01 * tiers[state.vipTier].multiplier) * 100) / 100);
+                container.innerHTML += `
+                    <div class="bg-darkSurface border border-slate-700/60 rounded-xl p-3 flex justify-between items-center">
+                        <div>
+                            <span class="text-[10px] bg-slate-800 text-slate-300 px-2 py-0.5 rounded font-bold">${ad.duration}s • ${ad.sponsor}</span>
+                            <h4 class="font-bold text-sm mt-1">${ad.title}</h4>
+                            <span class="text-xs text-emeraldLight font-semibold">+$${reward.toFixed(2)} USDT</span>
+                        </div>
+                        <button onclick="startAd(${ad.id})" class="bg-emeraldPrimary text-black font-bold text-xs px-4 py-2 rounded-lg hover:bg-emeraldLight transition">
+                            Watch
+                        </button>
+                    </div>
+                `;
+            });
+        }
+
+        // Render VIP Tiers
+        function renderVipList() {
+            const container = document.getElementById('vipList');
+            container.innerHTML = '';
+            Object.keys(tiers).forEach(key => {
+                const t = tiers[key];
+                const isCurrent = state.vipTier === key;
+                container.innerHTML += `
+                    <div class="bg-darkSurface border ${isCurrent ? 'border-goldAccent' : 'border-slate-700'} rounded-xl p-3.5 flex justify-between items-center">
+                        <div>
+                            <h4 class="font-bold text-sm ${t.color}">${t.title}</h4>
+                            <p class="text-[11px] text-slate-400">${t.dailyLimit} Ads/day • ${t.multiplier}x Multiplier</p>
+                        </div>
+                        ${isCurrent ? '<span class="text-xs text-goldAccent font-bold px-3 py-1 bg-goldAccent/10 rounded-lg">Active</span>' : 
+                        `<button onclick="upgradeVip('${key}')" class="bg-slate-700 hover:bg-goldAccent hover:text-black text-xs font-bold px-3 py-1.5 rounded-lg transition">$${t.cost}</button>`}
+                    </div>
+                `;
+            });
+        }
+
+        // Start Ad Watching
+        function startAd(id) {
+            const tierInfo = tiers[state.vipTier];
+            if (state.todayAdsWatched >= tierInfo.dailyLimit) {
+                showToast("Daily ad limit reached! Upgrade your VIP tier.", "error");
+                return;
+            }
+
+            currentActiveAd = availableAds.find(a => a.id === id);
+            secondsRemaining = currentActiveAd.duration;
+            
+            document.getElementById('adModalTitle').innerText = currentActiveAd.title;
+            document.getElementById('adModalDesc').innerText = currentActiveAd.desc;
+            document.getElementById('adTimerBadge').innerText = `${secondsRemaining}s`;
+            
+            const reward = Math.min(0.49, Math.round((currentActiveAd.duration * 0.01 * tierInfo.multiplier) * 100) / 100);
+            document.getElementById('adRewardPreview').innerText = `+${reward.toFixed(2)} USDT`;
+            
+            const claimBtn = document.getElementById('claimRewardBtn');
+            claimBtn.disabled = true;
+            claimBtn.className = "w-full bg-slate-700 text-slate-400 font-bold py-2.5 rounded-xl cursor-not-allowed transition";
+            claimBtn.innerHTML = `Please wait... (<span id="countdownSec">${secondsRemaining}</span>s)`;
+
+            document.getElementById('adModal').classList.remove('hidden');
+
+            // Countdown Timer
+            clearInterval(adTimerInterval);
+            adTimerInterval = setInterval(() => {
+                secondsRemaining--;
+                document.getElementById('adTimerBadge').innerText = `${secondsRemaining}s`;
+                document.getElementById('countdownSec').innerText = secondsRemaining;
+                
+                const progress = ((currentActiveAd.duration - secondsRemaining) / currentActiveAd.duration) * 100;
+                document.getElementById('adProgressBar').style.width = `${progress}%`;
+
+                if (secondsRemaining <= 0) {
+                    clearInterval(adTimerInterval);
+                    claimBtn.disabled = false;
+                    claimBtn.className = "w-full bg-emeraldPrimary text-black font-bold py-2.5 rounded-xl hover:bg-emeraldLight transition cursor-pointer";
+                    claimBtn.innerHTML = `<i class="fa-solid fa-check-circle mr-1"></i> Claim Reward (+$${reward.toFixed(2)} USDT)`;
+                }
+            }, 1000);
+        }
+
+        // Claim Reward
+        function claimAdReward() {
+            if (!currentActiveAd) return;
+            const tierInfo = tiers[state.vipTier];
+            const reward = Math.min(0.49, Math.round((currentActiveAd.duration * 0.01 * tierInfo.multiplier) * 100) / 100);
+
+            state.balance = Math.round((state.balance + reward) * 100) / 100;
+            state.todayAdsWatched += 1;
+            state.todayEarnings = Math.round((state.todayEarnings + reward) * 100) / 100;
+            state.totalEarnings = Math.round((state.totalEarnings + reward) * 100) / 100;
+
+            state.transactions.unshift({
+                type: 'AD_REWARD',
+                title: `Rewarded Ad (+$${reward.toFixed(2)})`,
+                desc: `Watched ${currentActiveAd.duration}s of ${currentActiveAd.title}`,
+                amount: reward,
+                date: new Date().toLocaleTimeString()
+            });
+
+            addNotification('Ad Reward Credited!', `+$${reward.toFixed(2)} USDT added to your wallet balance.`, 'AD');
+            
+            document.getElementById('adModal').classList.add('hidden');
+            currentActiveAd = null;
+            saveState();
+            showToast(`Successfully earned +$${reward.toFixed(2)} USDT!`, 'success');
+        }
+
+        // Upgrade VIP
+        function upgradeVip(targetKey) {
+            const targetTier = tiers[targetKey];
+            if (state.balance < targetTier.cost) {
+                showToast(`Insufficient balance ($${state.balance}). Required: $${targetTier.cost} USDT`, 'error');
+                return;
+            }
+
+            state.balance = Math.round((state.balance - targetTier.cost) * 100) / 100;
+            state.vipTier = targetKey;
+
+            state.transactions.unshift({
+                type: 'VIP_UPGRADE',
+                title: `Upgraded to ${targetTier.title}`,
+                desc: `Unlocked ${targetTier.dailyLimit} daily ads and ${targetTier.multiplier}x multiplier`,
+                amount: -targetTier.cost,
+                date: new Date().toLocaleTimeString()
+            });
+
+            addNotification('VIP Upgrade Activated!', `Congratulations! You are now ${targetTier.title}.`, 'VIP');
+            saveState();
+            showToast(`Successfully upgraded to ${targetTier.title}!`, 'success');
+        }
+
+        // Withdrawal Request
+        function submitWithdrawal() {
+            const address = document.getElementById('withdrawAddress').value.trim();
+            const amount = parseFloat(document.getElementById('withdrawAmount').value);
+
+            if (state.balance < 50.0) {
+                showToast('Withdrawal locked! Minimum balance required is 50.00 USDT.', 'error');
+                return;
+            }
+            if (!address.startsWith('T') || address.length !== 34) {
+                showToast("Invalid TRC20 address. Must start with 'T' and be 34 characters.", 'error');
+                return;
+            }
+            if (isNaN(amount) || amount < 50.0 || amount > state.balance) {
+                showToast('Invalid withdrawal amount.', 'error');
+                return;
+            }
+
+            state.balance = Math.round((state.balance - amount) * 100) / 100;
+            state.totalWithdrawn = Math.round((state.totalWithdrawn + amount) * 100) / 100;
+            state.savedTrc20Address = address;
+
+            state.transactions.unshift({
+                type: 'WITHDRAWAL',
+                title: `Payout Request ($${amount.toFixed(2)})`,
+                desc: `TRC20 Payout to ${address.slice(0, 6)}...`,
+                amount: -amount,
+                date: new Date().toLocaleTimeString()
+            });
+
+            addNotification('Withdrawal Submitted', `Payout request for $${amount.toFixed(2)} USDT is under review.`, 'WITHDRAWAL');
+            saveState();
+            showToast('Withdrawal request submitted successfully!', 'success');
+        }
+
+        // Deposit USDT
+        function submitDeposit() {
+            const txHash = document.getElementById('depositTxHash').value.trim();
+            const amount = parseFloat(document.getElementById('depositAmount').value);
+
+            if (!txHash || isNaN(amount) || amount <= 0) {
+                showToast('Please enter a valid amount and TxID.', 'error');
+                return;
+            }
+
+            state.balance = Math.round((state.balance + amount) * 100) / 100;
+            state.transactions.unshift({
+                type: 'DEPOSIT',
+                title: `Deposit USDT (TRC20)`,
+                desc: `Verified via TxID: ${txHash.slice(0, 10)}...`,
+                amount: amount,
+                date: new Date().toLocaleTimeString()
+            });
+
+            addNotification('Deposit Credited!', `Successfully credited +$${amount.toFixed(2)} USDT to wallet.`, 'DEPOSIT');
+            saveState();
+            showToast(`Deposit of $${amount.toFixed(2)} USDT credited!`, 'success');
+        }
+
+        // Notifications
+        function addNotification(title, message, type) {
+            state.notifications.unshift({ title, message, type, read: false, date: new Date().toLocaleTimeString() });
+        }
+
+        function toggleNotifications() {
+            const modal = document.getElementById('notifModal');
+            modal.classList.toggle('hidden');
+            state.notifications.forEach(n => n.read = true);
+            saveState();
+        }
+
+        function renderNotificationsList() {
+            const container = document.getElementById('notificationsContainer');
+            if (state.notifications.length === 0) {
+                container.innerHTML = '<p class="text-slate-500 text-center py-4">No notifications.</p>';
+                return;
+            }
+            container.innerHTML = '';
+            state.notifications.forEach(n => {
+                container.innerHTML += `
+                    <div class="bg-slate-800/80 p-2.5 rounded-xl border border-slate-700/50 space-y-1">
+                        <div class="flex justify-between items-center font-bold text-slate-200">
+                            <span>${n.title}</span>
+                            <span class="text-[10px] text-slate-400">${n.date}</span>
+                        </div>
+                        <p class="text-[11px] text-slate-300">${n.message}</p>
+                    </div>
+                `;
+            });
+        }
+
+        // Render Transactions
+        function renderTransactions() {
+            const container = document.getElementById('txList');
+            if (state.transactions.length === 0) {
+                container.innerHTML = '<p class="text-slate-500 text-center py-2">No transactions yet.</p>';
+                return;
+            }
+            container.innerHTML = '';
+            state.transactions.forEach(tx => {
+                const isPositive = tx.amount > 0;
+                container.innerHTML += `
+                    <div class="bg-slate-900/60 p-2.5 rounded-xl flex justify-between items-center border border-slate-800">
+                        <div>
+                            <span class="font-bold text-slate-200">${tx.title}</span>
+                            <p class="text-[10px] text-slate-400">${tx.desc}</p>
+                        </div>
+                        <span class="font-bold ${isPositive ? 'text-emeraldLight' : 'text-red-400'}">${isPositive ? '+' : ''}$${tx.amount.toFixed(2)}</span>
+                    </div>
+                `;
+            });
+        }
+
+        // Tabs switcher
+        function switchTab(tab) {
+            document.getElementById('tabAds').classList.add('hidden');
+            document.getElementById('tabVip').classList.add('hidden');
+            document.getElementById('tabWallet').classList.add('hidden');
+            
+            document.getElementById('tabAdsBtn').className = "flex-1 py-2 rounded-lg font-semibold text-slate-300 transition";
+            document.getElementById('tabVipBtn').className = "flex-1 py-2 rounded-lg font-semibold text-slate-300 transition";
+            document.getElementById('tabWalletBtn').className = "flex-1 py-2 rounded-lg font-semibold text-slate-300 transition";
+
+            if (tab === 'ads') {
+                document.getElementById('tabAds').classList.remove('hidden');
+                document.getElementById('tabAdsBtn').className = "flex-1 py-2 rounded-lg font-bold bg-emeraldPrimary text-black transition";
+            } else if (tab === 'vip') {
+                document.getElementById('tabVip').classList.remove('hidden');
+                document.getElementById('tabVipBtn').className = "flex-1 py-2 rounded-lg font-bold bg-goldAccent text-black transition";
+            } else if (tab === 'wallet') {
+                document.getElementById('tabWallet').classList.remove('hidden');
+                document.getElementById('tabWalletBtn').className = "flex-1 py-2 rounded-lg font-bold bg-emeraldPrimary text-black transition";
+            }
+        }
+
+        // Toast Notification helper
+        function showToast(msg, type = 'info') {
+            const toast = document.getElementById('toast');
+            document.getElementById('toastMsg').innerText = msg;
+            const icon = document.getElementById('toastIcon');
+            icon.className = type === 'success' ? "fa-solid fa-circle-check text-emeraldPrimary" : "fa-solid fa-circle-exclamation text-red-400";
+            
+            toast.classList.remove('opacity-0', 'pointer-events-none');
+            toast.classList.add('opacity-100');
+            setTimeout(() => {
+                toast.classList.remove('opacity-100');
+                toast.classList.add('opacity-0', 'pointer-events-none');
+            }, 3000);
+        }
+
+        window.onload = initApp;
+    </script>
+</body>
+</html>
